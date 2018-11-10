@@ -153,7 +153,7 @@ class DocumentsWithDict(object):
                             List of words to be removed from the dictionary.
         :return:
         """
-        self.custom_stopwords = set(list_of_words)
+        self.custom_stopwords.update(list_of_words)
         self._remove_words_or_IDs(list_of_words)
         return self
 
@@ -208,23 +208,24 @@ class DocumentsWithDict(object):
 
         return self
 
-    def dataframe_with_document_count_and_removed_words(self):
+    def print(self):
 
         # Save dictionary with document frequency for tuning the algorithm later.
 
-        data = [[word_id,
-                 self.dict_id2word[word_id],
+        data = [[self.dict_id2word[word_id],
                  self.dict_id2word.dfs[word_id]] for word_id in self.dict_id2word.keys()]
 
         DocFreq_df = pd.DataFrame(data)
 
-        DocFreq_df.columns = ['WordID', 'word', 'docfreq']
-
-        set_removedWords = set(self.removed_words)
-
-        DocFreq_df['removed'] = DocFreq_df['WordID'].apply(lambda x: x in set_removedWords)
-
-        return DocFreq_df
+        DocFreq_df.columns = ['word', 'docfreq']
+        DocFreq_df['removed'] = False
+        if len(self.removed_words) > 0:
+            removed_words = pd.DataFrame(self.removed_words)
+            removed_words.columns = ['word', 'docfreq']
+            removed_words['removed'] = True
+            return pd.concat([DocFreq_df, removed_words]).sort_values('word')
+        else:
+            return DocFreq_df.sort_values('word')
 
 
 
