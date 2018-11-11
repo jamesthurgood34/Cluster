@@ -8,6 +8,7 @@ import gensim
 import nltk
 import logging
 import pandas as pd
+import numpy as np
 
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
@@ -15,12 +16,22 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+class Utilities:
+    @staticmethod
+    def tokenize(document):
+        """
+        :param document: str
+                    This contains a string of one document.
+        :return: list
+                 Returns a list containing a string for each word.
+        """
+        return document.split()
+
 class Documents(object):
 
     def __init__(self, input_documents):
         """
-        :param input_documents: This should be a dictionary with the key being the ID and the value the string of the
-        document
+        :param input_documents: This should be a list of strings i.e. a list of the document
         """
         self.docs = input_documents
         logger.debug('Created documents instance')
@@ -36,8 +47,7 @@ class Documents(object):
         logger.info('Removing the following chars: ' + to_remove + '\n')
         replace_punctuation = str.maketrans(to_remove, ' ' * len(to_remove))
 
-        for k in self.docs.keys():
-            self.docs[k] = self.docs[k].translate(replace_punctuation)
+        self.docs = [doc.translate(replace_punctuation) for doc in self.docs]
 
         return self
 
@@ -46,8 +56,7 @@ class Documents(object):
 
         :return:
         """
-        for k in self.docs.keys():
-            self.docs[k] = self.docs[k].lower()
+        self.docs = [doc.lower() for doc in self.docs]
 
         return self
 
@@ -58,17 +67,8 @@ class Documents(object):
         :return:
         """
 
-        def tokenize(document):
-            """
-            :param document: str
-                            This contains a string of one document.
-            :return: list
-                     Returns a list containing a string for each word.
-            """
-            return document.split()
-
         return DocumentsWithDict(self,
-                      dict_id2word = gensim.corpora.Dictionary(documents=(tokenize(i) for i in self.docs.values())))
+                      dict_id2word = gensim.corpora.Dictionary(documents=(Utilities.tokenize(i) for i in self.docs)))
 
 
 
@@ -226,6 +226,17 @@ class DocumentsWithDict(object):
             return pd.concat([DocFreq_df, removed_words]).sort_values('word')
         else:
             return DocFreq_df.sort_values('word')
+
+
+    def tokenize_documents(self):
+        self.corpus = [self.dict_id2word.doc2bow(Utilities.tokenize(i)) for i in self.Documents.docs]
+
+        # Remove values return as zero due to having no words from job ad in id2word.
+        empty = [item == [] for item in self.corpus]
+        notEmpty = [not i for i in empty]
+        notEmpty = np.where(notEmpty)[0].tolist()
+        self.corpus = [self.corpus[i] for i in notEmpty]
+
 
 
 

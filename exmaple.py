@@ -12,13 +12,16 @@
 
 import Cluster as cl
 
-dict = cl.Documents({1: 'this is a sentence',
-                  2: 'common abc hjsd sdjksd aka dks asld',
-                  3: 'this is',
-                  4: 'this this'}).create_dictionary()
+dict = cl.Documents( ['this is a sentence',
+                  'common abc hjsd hisd sdjksd aka dks asld',
+                  'is is',
+                  'this this',
+                      'words words lots of words this is a long set of words']).create_dictionary()
 
 dict.print()
 
 dict.remove_custom_stopwords(['dks'])
 
 dict.print()
+
+dict = dict.remove_single_letters_and_numbers().remove_stopwords()
