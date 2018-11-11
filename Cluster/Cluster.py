@@ -2,7 +2,7 @@
 Clustering Code
 
 """
-
+from Utilities import Utils
 import string
 import gensim
 import nltk
@@ -10,22 +10,14 @@ import logging
 import pandas as pd
 import numpy as np
 
+from joblib import Parallel, delayed
+
 logger = logging.getLogger(__name__)
 ch = logging.StreamHandler()
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
-class Utilities:
-    @staticmethod
-    def tokenize(document):
-        """
-        :param document: str
-                    This contains a string of one document.
-        :return: list
-                 Returns a list containing a string for each word.
-        """
-        return document.split()
 
 class Documents(object):
 
@@ -68,7 +60,7 @@ class Documents(object):
         """
 
         return DocumentsWithDict(self,
-                      dict_id2word = gensim.corpora.Dictionary(documents=(Utilities.tokenize(i) for i in self.docs)))
+                      dict_id2word = gensim.corpora.Dictionary(documents=(Utils.tokenize(i) for i in self.docs)))
 
 
 
@@ -229,7 +221,7 @@ class DocumentsWithDict(object):
 
 
     def tokenize_documents(self):
-        self.corpus = [self.dict_id2word.doc2bow(Utilities.tokenize(i)) for i in self.Documents.docs]
+        self.corpus = [self.dict_id2word.doc2bow(Utils.tokenize(i)) for i in self.Documents.docs]
 
         # Remove values return as zero due to having no words from job ad in id2word.
         empty = [item == [] for item in self.corpus]
@@ -238,8 +230,23 @@ class DocumentsWithDict(object):
         self.corpus = [self.corpus[i] for i in notEmpty]
 
 
+class Cluster(object):
+    def __init__(self, documents_with_dict):
+        self.DocumentsWithDict = documents_with_dict
 
+    def how_many_topics(self, min_t, max_t, interval, njobs = -1):
+        """
 
+        :param min_t:
+        :param max_t:
+        :param interval:
+        :param njobs: Number of parallel jobs. Default = -1 which wil use one less cpu than available.
+        :return:
+        """
 
+        self.TopicsRange = range(min_t, max_t, interval)
 
-
+        LDAout = Parallel(n_jobs=inputs.noJobs_LDA)(
+                                            delayed(repeatLDA)(self.DocumentsWithDict.corpus,
+                                                               self.DocumentsWithDict.id2word,
+                                                                Ntopics) for Ntopics in self.TopicsRange)
